@@ -1,1 +1,2 @@
-../Core/Src/control.c:10:6:Control_Step	3
+../Core/Src/control.c:14:6:Control_Step	6
+../Core/Src/control.c:147:6:Control_GetAngles	2

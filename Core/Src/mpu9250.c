@@ -3,6 +3,11 @@
 #include <string.h>
 #include "timer_measure.h"
 
+/* Define M_PI if not available */
+#ifndef M_PI
+#define M_PI 3.14159265358979323846f
+#endif
+
 
 
 /* magnetometer adjustment coefficients (factory fuse ROM) */
@@ -290,4 +295,132 @@ HAL_StatusTypeDef MPU9250_ReadData(SPI_HandleTypeDef *hspi, MPU9250_Data *data)
     Timer_PrintElapsed("  |_CONVERSION", &timer_conversion);*/
     
     return HAL_OK;
+}
+
+/**
+ * IMU_CalculateAngles: Calculate pitch, roll from accelerometer
+ * 
+ * This function computes the Euler angles using accelerometer data.
+ * Pitch and roll are calculated from the acceleration vector.
+ * Yaw is calculated from magnetometer (compass heading).
+ * 
+ * Note: This method assumes near-zero acceleration (level flight).
+ * For better results with movement, use IMU_ComplementaryFilter().
+ */
+void IMU_CalculateAngles(const MPU9250_Data *mpu_data, IMU_Angles_t *angles)
+{
+    if (!mpu_data || !angles) return;
+    
+    /* Calculate pitch and roll from accelerometer
+     * Roll  = atan2(accelY, accelZ)
+     * Pitch = atan2(-accelX, sqrt(accelY^2 + accelZ^2)) */
+    angles->roll  = atan2f(mpu_data->accelY, mpu_data->accelZ);
+    angles->pitch = atan2f(-mpu_data->accelX, 
+                           sqrtf(mpu_data->accelY * mpu_data->accelY + 
+                                 mpu_data->accelZ * mpu_data->accelZ));
+    
+    /* Calculate yaw from magnetometer (compass heading)
+     * Compensate for pitch and roll for better accuracy */
+    float sin_roll = sinf(angles->roll);
+    float cos_roll = cosf(angles->roll);
+    float sin_pitch = sinf(angles->pitch);
+    float cos_pitch = cosf(angles->pitch);
+    
+    float mx = mpu_data->magX;
+    float my = mpu_data->magY;
+    float mz = mpu_data->magZ;
+    
+    /* Tilt-compensated heading (2D with tilt compensation) */
+    float mag_x_comp = mx * cos_pitch + 
+                       mz * sin_pitch;
+    float mag_y_comp = mx * sin_roll * sin_pitch + 
+                       my * cos_roll - 
+                       mz * sin_roll * cos_pitch;
+    
+    angles->yaw = atan2f(-mag_y_comp, mag_x_comp);
+    
+    /* Convert from radians to degrees */
+    angles->pitch *= 180.0f / M_PI;
+    angles->roll  *= 180.0f / M_PI;
+    angles->yaw   *= 180.0f / M_PI;
+    
+    /* Normalize yaw to 0-360 degrees */
+    if (angles->yaw < 0.0f) {
+        angles->yaw += 360.0f;
+    }
+}
+
+/**
+ * IMU_UpdateAnglesWithGyro: Update angles using gyroscope integration
+ * 
+ * ⚠️  WARNING: This function only integrates gyroscope data without any correction.
+ * Over time, it will DRIFT due to gyroscope bias and noise!
+ * 
+ * Use IMU_ComplementaryFilter() instead, which combines gyro + accelerometer
+ * for much better long-term accuracy.
+ * 
+ * This function is kept for reference or special cases only.
+ * 
+ * dt: time delta in seconds (sampling period)
+ */
+void IMU_UpdateAnglesWithGyro(IMU_Angles_t *angles, const MPU9250_Data *mpu_data, float dt)
+{
+    if (!angles || !mpu_data || dt <= 0.0f) return;
+    
+    /* Integrate gyroscope data (in degrees/second)
+     * Each gyro axis contributes to the corresponding angle */
+    angles->roll  += mpu_data->gyroX * dt;
+    angles->pitch += mpu_data->gyroY * dt;
+    angles->yaw   += mpu_data->gyroZ * dt;
+    
+    /* Normalize angles to avoid overflow */
+    if (angles->yaw > 180.0f) {
+        angles->yaw -= 360.0f;
+    } else if (angles->yaw < -180.0f) {
+        angles->yaw += 360.0f;
+    }
+}
+
+/**
+ * IMU_ComplementaryFilter: Complementary filter for better angle estimation
+ * 
+ * Combines accelerometer (slow, accurate but drifts with movement)
+ * with gyroscope (fast, but drifts over time).
+ * 
+ * alpha: filter coefficient (0.0 - 1.0)
+ *   - 0.98: Trust 98% gyro, 2% accelerometer (good for dynamic motion)
+ *   - 0.95: Trust 95% gyro, 5% accelerometer (balanced)
+ *   - 0.90: Trust 90% gyro, 10% accelerometer (more stable when stationary)
+ *
+ * Typical use: alpha = 0.98, dt = 0.01 (100 Hz)
+ */
+void IMU_ComplementaryFilter(IMU_Angles_t *angles, const MPU9250_Data *mpu_data, 
+                             float dt, float alpha)
+{
+    if (!angles || !mpu_data || dt <= 0.0f) return;
+    
+    /* Calculate instantaneous angles from accelerometer */
+    IMU_Angles_t accel_angles;
+    IMU_CalculateAngles(mpu_data, &accel_angles);
+    
+    /* Update angles from gyroscope */
+    float gyro_pitch = angles->pitch + mpu_data->gyroY * dt;
+    float gyro_roll  = angles->roll  + mpu_data->gyroX * dt;
+    float gyro_yaw   = angles->yaw   + mpu_data->gyroZ * dt;
+    
+    /* Complementary filter: combine gyro (fast) with accel (accurate)
+     * Filtered = alpha * (previous + gyro_rate * dt) + (1 - alpha) * accel_angle */
+    angles->pitch = alpha * gyro_pitch + (1.0f - alpha) * accel_angles.pitch;
+    angles->roll  = alpha * gyro_roll  + (1.0f - alpha) * accel_angles.roll;
+    
+    /* Yaw is only from gyroscope (magnetometer is too noisy for direct calculation
+     * but could be used for long-term drift correction if needed) */
+    angles->yaw = gyro_yaw;
+    
+    /* Normalize angles */
+    if (angles->yaw > 180.0f) {
+        angles->yaw -= 360.0f;
+    } else if (angles->yaw < -180.0f) {
+        angles->yaw += 360.0f;
+    }
 }

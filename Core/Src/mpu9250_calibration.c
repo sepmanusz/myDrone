@@ -4,9 +4,26 @@
  */
 
 #include "mpu9250_calibration.h"
+#include <stdint.h>
 #include <math.h>
+#include <string.h>
 #include "uart_printf.h"
 #include "main.h"
+#include "stm32f7xx_hal_flash_ex.h"  /* needed for FLASH_SECTOR_ definitions */
+#include "stm32f7xx_hal_gpio.h"   /* ensure GPIOx symbols available */
+
+/* Flash storage configuration for STM32F722ZET
+   Flash: 512 KB, Sector size: 16 KB
+   We use the last sector (Sector 11) at address 0x080E0000 for calibration data
+   Size: ~132 bytes for calibration struct, plenty of room in 16KB sector */
+#define CALIBRATION_FLASH_ADDR 0x08070000  /* Last sector of STM32F722ZET (sector 7, 64KB per sector) */
+#define CALIBRATION_MAGIC 0xCAFEBABE       /* Magic number to verify valid data */
+
+/* Structure to store in flash (with magic number for validation) */
+typedef struct {
+    uint32_t magic;                        /* Magic number for validity check */
+    MPU9250_Calibration_t calibration;
+} CalibrationFlashData_t;
 
 /* Global calibration data */
 MPU9250_Calibration_t mpu9250_cal = {
@@ -33,15 +50,9 @@ MPU9250_Calibration_t mpu9250_cal = {
  */
 static void wait_for_user_button(void)
 {
-    uart_printf("Press USER button to continue...\r\n");
-    while (HAL_GPIO_ReadPin(USER_Btn_GPIO_Port, USER_Btn_Pin) == GPIO_PIN_RESET) {
-        HAL_Delay(10);
-    }
-    HAL_Delay(50);
-    while (HAL_GPIO_ReadPin(USER_Btn_GPIO_Port, USER_Btn_Pin) == GPIO_PIN_SET) {
-        HAL_Delay(10);
-    }
-    HAL_Delay(50);
+    /* polling USER button removed to avoid GPIO dependency; simple delay instead */
+    uart_printf("Press USER button to continue (waiting 5s)...\r\n");
+    HAL_Delay(5000);
 }
 
 /**
@@ -94,7 +105,7 @@ HAL_StatusTypeDef MPU9250_CalibrateGyro(SPI_HandleTypeDef *hspi, uint16_t sample
  */
 HAL_StatusTypeDef MPU9250_CalibrateAccel(SPI_HandleTypeDef *hspi, uint16_t samples_per_axis)
 {
-    if (samples_per_axis == 0) samples_per_axis = 50;
+    if (samples_per_axis == 0) samples_per_axis = 200;
     
     uart_printf("Accel calibration: Place device flat, +Z UP (gravity). Press button or wait 5s...\r\n");
     HAL_Delay(5000);
@@ -141,7 +152,9 @@ HAL_StatusTypeDef MPU9250_CalibrateAccel(SPI_HandleTypeDef *hspi, uint16_t sampl
     /* Offset = (reading_up + reading_down) / 2  */
     mpu9250_cal.accel_offset_x = (accel_x_up + accel_x_down) / 2.0f;  /* Should be ~0 */
     mpu9250_cal.accel_offset_y = (accel_y_up + accel_y_down) / 2.0f;  /* Should be ~0 */
-    mpu9250_cal.accel_offset_z = (accel_z_up + accel_z_down) / 2.0f - 1.0f;  /* Center around 1g */
+    /* For Z we simply center between +1g and -1g readings; no extra -1 correction
+       because offsets are subtracted later. */
+    mpu9250_cal.accel_offset_z = (accel_z_up + accel_z_down) / 2.0f;  /* Should be ~0 */
     mpu9250_cal.accel_calibrated = 1;
     
     uart_printf("Accel calibration complete:\r\n");
@@ -158,7 +171,7 @@ HAL_StatusTypeDef MPU9250_CalibrateAccel(SPI_HandleTypeDef *hspi, uint16_t sampl
  */
 HAL_StatusTypeDef MPU9250_CalibrateMag(SPI_HandleTypeDef *hspi, uint16_t duration_ms)
 {
-    if (duration_ms == 0) duration_ms = 60000;  /* Default 60 seconds for spherical rotation */
+    if (duration_ms == 0) duration_ms = 6000;  /* Default 60 seconds for spherical rotation */
     
     uart_printf("Mag calibration: Rotate device in ALL directions for 60 seconds.\r\n");
     uart_printf("Move slowly in XY, YZ, XZ planes (all directions). Press button to start...\r\n");
@@ -232,13 +245,13 @@ HAL_StatusTypeDef MPU9250_CalibrateAll(SPI_HandleTypeDef *hspi)
     }
     HAL_Delay(1000);
     
-    if (MPU9250_CalibrateAccel(hspi, 100) != HAL_OK) {
+    if (MPU9250_CalibrateAccel(hspi, 250) != HAL_OK) {
         uart_printf("ERROR: Accel calibration failed\r\n");
         return HAL_ERROR;
     }
     HAL_Delay(1000);
     
-    if (MPU9250_CalibrateMag(hspi, 60000) != HAL_OK) {  /* 60 second spherical rotation */
+    if (MPU9250_CalibrateMag(hspi, 6000) != HAL_OK) {  /* 60 second spherical rotation */
         uart_printf("ERROR: Mag calibration failed\r\n");
         return HAL_ERROR;
     }
@@ -305,60 +318,97 @@ void MPU9250_CalibrationReset(void)
 }
 
 /**
- * @brief Compute 2D heading from magnetometer only (horizontal plane)
- * Good when sensor is horizontal; fails if tilted
+ * @brief Save calibration data to flash (STM32F722ZET last sector)
  */
-float ComputeHeading2D(float mag_x, float mag_y, float declination)
+HAL_StatusTypeDef MPU9250_SaveCalibration(void)
 {
-    /* Heading from atan2: angle between mag vector and north (Y-axis) */
-    float heading = atan2f(mag_x, mag_y) * 57.29577951308232f;  /* rad to deg */
-    heading += declination;
-    if (heading < 0.0f) heading += 360.0f;
-    if (heading >= 360.0f) heading -= 360.0f;
-    return heading;
+    /* Create flash data with magic number */
+    /* No need to store in local struct; write directly */
+    
+    /* Unlock flash */
+    HAL_FLASH_Unlock();
+    
+    /* Erase sector (Sector 11 on STM32F722ZET) */
+    FLASH_EraseInitTypeDef erase_init;
+    uint32_t sector_error = 0;
+    
+    erase_init.TypeErase = FLASH_TYPEERASE_SECTORS;
+    /* On STM32F722 flash has 8 sectors (0..7); use sector 7 as last sector */
+    erase_init.Sector = 7;  /* last sector */
+    erase_init.NbSectors = 1;
+    erase_init.VoltageRange = FLASH_VOLTAGE_RANGE_3;  /* 2.7V to 3.6V */
+    
+    if (HAL_FLASHEx_Erase(&erase_init, &sector_error) != HAL_OK) {
+        uint32_t err = HAL_FLASH_GetError();
+        uart_printf("ERROR: Flash erase failed (sector error %lu, HAL error 0x%08lX)\r\n", sector_error, err);
+        HAL_FLASH_Lock();
+        return HAL_ERROR;
+    }
+    
+    /* Write magic number */
+    if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, CALIBRATION_FLASH_ADDR, CALIBRATION_MAGIC) != HAL_OK) {
+        uint32_t err = HAL_FLASH_GetError();
+        uart_printf("ERROR: Flash write (magic) failed, HAL error 0x%08lX\r\n", err);
+        HAL_FLASH_Lock();
+        return HAL_ERROR;
+    }
+    
+    /* Write calibration data (word by word, 4 bytes each) */
+    uint32_t *src_ptr = (uint32_t *)&mpu9250_cal;
+    uint32_t addr = CALIBRATION_FLASH_ADDR + 4;  /* Skip magic number */
+    uint32_t size = sizeof(MPU9250_Calibration_t);
+    uint32_t words = (size + 3) / 4;  /* Round up to words */
+    
+    for (uint32_t i = 0; i < words; i++) {
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr, src_ptr[i]) != HAL_OK) {
+            uint32_t err = HAL_FLASH_GetError();
+            uart_printf("ERROR: Flash write (data @%lu) failed, HAL error 0x%08lX\r\n", i, err);
+            HAL_FLASH_Lock();
+            return HAL_ERROR;
+        }
+        addr += 4;
+    }
+    
+    /* Lock flash */
+    HAL_FLASH_Lock();
+    
+    uart_printf("Calibration saved to flash (at 0x%08lX)\r\n", CALIBRATION_FLASH_ADDR);
+    return HAL_OK;
 }
 
 /**
- * @brief Compute tilt-compensated 3D heading
- * Uses accel pitch/roll to project mag to horizontal plane
- * Better for tilted sensors; more complex calculation
+ * @brief Load calibration data from flash
  */
-float ComputeHeading3D(float mag_x, float mag_y, float mag_z,
-                       float accel_x, float accel_y, float accel_z,
-                       float declination)
+HAL_StatusTypeDef MPU9250_LoadCalibration(void)
 {
-    /* Normalize accelerometer (gives gravity vector) */
-    float accel_mag = sqrtf(accel_x * accel_x + accel_y * accel_y + accel_z * accel_z);
-    if (accel_mag < 0.001f) {
-        /* Fallback to 2D if accel is too weak */
-        return ComputeHeading2D(mag_x, mag_y, declination);
+    /* Read magic number */
+    uint32_t magic = *(uint32_t *)CALIBRATION_FLASH_ADDR;
+    
+    if (magic != CALIBRATION_MAGIC) {
+        uart_printf("WARNING: No valid calibration in flash (magic: 0x%08lX, expected: 0x%08lX)\r\n", magic, CALIBRATION_MAGIC);
+        uart_printf("         Using default calibration. Please run calibration and save.\r\n");
+        return HAL_ERROR;  /* No valid calibration stored */
     }
     
-    float nx = accel_x / accel_mag;
-    float ny = accel_y / accel_mag;
-    float nz = accel_z / accel_mag;
+    /* Read calibration data from flash */
+    uint32_t *dest_ptr = (uint32_t *)&mpu9250_cal;
+    uint32_t addr = CALIBRATION_FLASH_ADDR + 4;  /* Skip magic number */
+    uint32_t size = sizeof(MPU9250_Calibration_t);
+    uint32_t words = (size + 3) / 4;  /* Round up to words */
     
-    /* Compute pitch and roll from accelerometer */
-    float pitch = asinf(-nx);  /* rad */
-    float roll = atan2f(ny, nz);  /* rad */
+    for (uint32_t i = 0; i < words; i++) {
+        dest_ptr[i] = *(uint32_t *)addr;
+        addr += 4;
+    }
     
-    /* Rotate magnetic vector to horizontal plane using pitch and roll */
-    float sin_pitch = sinf(pitch);
-    float cos_pitch = cosf(pitch);
-    float sin_roll = sinf(roll);
-    float cos_roll = cosf(roll);
+    uart_printf("Calibration loaded from flash:\r\n");
+    uart_printf("  Gyro offset:   X=%.6f  Y=%.6f  Z=%.6f dps\r\n", 
+                mpu9250_cal.gyro_offset_x, mpu9250_cal.gyro_offset_y, mpu9250_cal.gyro_offset_z);
+    uart_printf("  Accel offset:  X=%.6f  Y=%.6f  Z=%.6f g\r\n",
+                mpu9250_cal.accel_offset_x, mpu9250_cal.accel_offset_y, mpu9250_cal.accel_offset_z);
+    uart_printf("  Mag offset:    X=%.6f  Y=%.6f  Z=%.6f uT\r\n",
+                mpu9250_cal.mag_offset_x, mpu9250_cal.mag_offset_y, mpu9250_cal.mag_offset_z);
     
-    /* Rotation matrix to horizontal plane:
-     * mag_horizontal_x = mag_x * cos_pitch + mag_y * sin_roll * sin_pitch + mag_z * cos_roll * sin_pitch
-     * mag_horizontal_y = mag_y * cos_roll - mag_z * sin_roll
-     */
-    float mag_h_x = mag_x * cos_pitch + mag_y * sin_roll * sin_pitch + mag_z * cos_roll * sin_pitch;
-    float mag_h_y = mag_y * cos_roll - mag_z * sin_roll;
-    
-    /* Compute heading from horizontal magnetic components */
-    float heading = atan2f(mag_h_x, mag_h_y) * 57.29577951308232f;
-    heading += declination;
-    if (heading < 0.0f) heading += 360.0f;
-    if (heading >= 360.0f) heading -= 360.0f;
-    return heading;
+    return HAL_OK;
 }
+

@@ -6,6 +6,7 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../Core/Src/control.c \
+../Core/Src/drone_stabilization_example.c \
 ../Core/Src/main.c \
 ../Core/Src/mpu9250.c \
 ../Core/Src/mpu9250_calibration.c \
@@ -19,6 +20,7 @@ C_SRCS += \
 
 OBJS += \
 ./Core/Src/control.o \
+./Core/Src/drone_stabilization_example.o \
 ./Core/Src/main.o \
 ./Core/Src/mpu9250.o \
 ./Core/Src/mpu9250_calibration.o \
@@ -32,6 +34,7 @@ OBJS += \
 
 C_DEPS += \
 ./Core/Src/control.d \
+./Core/Src/drone_stabilization_example.d \
 ./Core/Src/main.d \
 ./Core/Src/mpu9250.d \
 ./Core/Src/mpu9250_calibration.d \
@@ -51,7 +54,7 @@ Core/Src/%.o Core/Src/%.su Core/Src/%.cyclo: ../Core/Src/%.c Core/Src/subdir.mk
 clean: clean-Core-2f-Src
 
 clean-Core-2f-Src:
-	-$(RM) ./Core/Src/control.cyclo ./Core/Src/control.d ./Core/Src/control.o ./Core/Src/control.su ./Core/Src/main.cyclo ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/main.su ./Core/Src/mpu9250.cyclo ./Core/Src/mpu9250.d ./Core/Src/mpu9250.o ./Core/Src/mpu9250.su ./Core/Src/mpu9250_calibration.cyclo ./Core/Src/mpu9250_calibration.d ./Core/Src/mpu9250_calibration.o ./Core/Src/mpu9250_calibration.su ./Core/Src/stm32f7xx_hal_msp.cyclo ./Core/Src/stm32f7xx_hal_msp.d ./Core/Src/stm32f7xx_hal_msp.o ./Core/Src/stm32f7xx_hal_msp.su ./Core/Src/stm32f7xx_it.cyclo ./Core/Src/stm32f7xx_it.d ./Core/Src/stm32f7xx_it.o ./Core/Src/stm32f7xx_it.su ./Core/Src/syscalls.cyclo ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/syscalls.su ./Core/Src/sysmem.cyclo ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/sysmem.su ./Core/Src/system_stm32f7xx.cyclo ./Core/Src/system_stm32f7xx.d ./Core/Src/system_stm32f7xx.o ./Core/Src/system_stm32f7xx.su ./Core/Src/timer_measure.cyclo ./Core/Src/timer_measure.d ./Core/Src/timer_measure.o ./Core/Src/timer_measure.su ./Core/Src/uart_printf.cyclo ./Core/Src/uart_printf.d ./Core/Src/uart_printf.o ./Core/Src/uart_printf.su
+	-$(RM) ./Core/Src/control.cyclo ./Core/Src/control.d ./Core/Src/control.o ./Core/Src/control.su ./Core/Src/drone_stabilization_example.cyclo ./Core/Src/drone_stabilization_example.d ./Core/Src/drone_stabilization_example.o ./Core/Src/drone_stabilization_example.su ./Core/Src/main.cyclo ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/main.su ./Core/Src/mpu9250.cyclo ./Core/Src/mpu9250.d ./Core/Src/mpu9250.o ./Core/Src/mpu9250.su ./Core/Src/mpu9250_calibration.cyclo ./Core/Src/mpu9250_calibration.d ./Core/Src/mpu9250_calibration.o ./Core/Src/mpu9250_calibration.su ./Core/Src/stm32f7xx_hal_msp.cyclo ./Core/Src/stm32f7xx_hal_msp.d ./Core/Src/stm32f7xx_hal_msp.o ./Core/Src/stm32f7xx_hal_msp.su ./Core/Src/stm32f7xx_it.cyclo ./Core/Src/stm32f7xx_it.d ./Core/Src/stm32f7xx_it.o ./Core/Src/stm32f7xx_it.su ./Core/Src/syscalls.cyclo ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/syscalls.su ./Core/Src/sysmem.cyclo ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/sysmem.su ./Core/Src/system_stm32f7xx.cyclo ./Core/Src/system_stm32f7xx.d ./Core/Src/system_stm32f7xx.o ./Core/Src/system_stm32f7xx.su ./Core/Src/timer_measure.cyclo ./Core/Src/timer_measure.d ./Core/Src/timer_measure.o ./Core/Src/timer_measure.su ./Core/Src/uart_printf.cyclo ./Core/Src/uart_printf.d ./Core/Src/uart_printf.o ./Core/Src/uart_printf.su
 
 .PHONY: clean-Core-2f-Src
 

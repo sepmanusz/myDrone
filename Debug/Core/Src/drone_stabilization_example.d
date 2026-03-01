@@ -1,5 +1,5 @@
-Core/Src/mpu9250_calibration.o: ../Core/Src/mpu9250_calibration.c \
- ../Core/Inc/mpu9250_calibration.h \
+Core/Src/drone_stabilization_example.o: \
+ ../Core/Src/drone_stabilization_example.c \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h \
  ../Core/Inc/stm32f7xx_hal_conf.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_rcc.h \
@@ -33,10 +33,9 @@ Core/Src/mpu9250_calibration.o: ../Core/Src/mpu9250_calibration.c \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_usb.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd_ex.h \
- ../Core/Inc/mpu9250.h ../Core/Inc/main.h ../Core/Inc/uart_printf.h \
- ../Core/Inc/main.h \
- ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_flash_ex.h
-../Core/Inc/mpu9250_calibration.h:
+ ../Core/Inc/control.h ../Core/Inc/mpu9250.h ../Core/Inc/main.h \
+ ../Core/Inc/mpu9250_calibration.h ../Core/Inc/timer_measure.h \
+ ../Core/Inc/uart_printf.h
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h:
 ../Core/Inc/stm32f7xx_hal_conf.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_rcc.h:
@@ -70,8 +69,9 @@ Core/Src/mpu9250_calibration.o: ../Core/Src/mpu9250_calibration.c \
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_usb.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd_ex.h:
+../Core/Inc/control.h:
 ../Core/Inc/mpu9250.h:
 ../Core/Inc/main.h:
+../Core/Inc/mpu9250_calibration.h:
+../Core/Inc/timer_measure.h:
 ../Core/Inc/uart_printf.h:
-../Core/Inc/main.h:
-../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_flash_ex.h:

@@ -1,0 +1,7 @@
+../Core/Src/drone_stabilization_example.c:49:6:PID_Init	32	static
+../Core/Src/drone_stabilization_example.c:67:7:PID_Update	48	static
+../Core/Src/drone_stabilization_example.c:104:6:Drone_ControllerInit	8	static
+../Core/Src/drone_stabilization_example.c:144:6:Drone_UpdateStabilization	56	static
+../Core/Src/drone_stabilization_example.c:216:6:Drone_SetTargetAngles	24	static
+../Core/Src/drone_stabilization_example.c:232:6:Drone_GetMotorOutputs	24	static
+../Core/Src/drone_stabilization_example.c:243:6:Drone_SetStabilization	16	static

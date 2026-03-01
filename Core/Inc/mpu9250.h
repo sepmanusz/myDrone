@@ -68,6 +68,13 @@ typedef struct {
     float magZ;
 } MPU9250_Data;
 
+/* IMU Euler angles (pitch, roll, yaw) */
+typedef struct {
+    float pitch;  /* Rotation around Y axis (forward/backward tilt) */
+    float roll;   /* Rotation around X axis (left/right tilt) */
+    float yaw;    /* Rotation around Z axis (heading) */
+} IMU_Angles_t;
+
 /* Függvények */
 void MPU9250_Init(SPI_HandleTypeDef *hspi);
 HAL_StatusTypeDef MPU9250_ReadData(SPI_HandleTypeDef *hspi, MPU9250_Data *data);
@@ -76,5 +83,10 @@ void MPU9250_WriteReg(SPI_HandleTypeDef *hspi, uint8_t reg, uint8_t value);
 HAL_StatusTypeDef MPU9250_Check(SPI_HandleTypeDef *hspi);
 HAL_StatusTypeDef MPU9250_MagInit(SPI_HandleTypeDef *hspi);
 HAL_StatusTypeDef MPU9250_ReadMag(SPI_HandleTypeDef *hspi, float *mx, float *my, float *mz);
+
+/* IMU angle calculation functions */
+void IMU_CalculateAngles(const MPU9250_Data *mpu_data, IMU_Angles_t *angles);
+void IMU_UpdateAnglesWithGyro(IMU_Angles_t *angles, const MPU9250_Data *mpu_data, float dt);
+void IMU_ComplementaryFilter(IMU_Angles_t *angles, const MPU9250_Data *mpu_data, float dt, float alpha);
 
 #endif /* MPU9250_H */

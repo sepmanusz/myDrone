@@ -143,12 +143,31 @@ int main(void)
   } else {
     uart_printf("MPU9250 inicializalasi hiba!\r\n");
   }
-#ifndef CALIBRATE_DRONE
+
+#ifdef CALIBRATE_DRONE
+  /* Calibration mode: run full calibration and save to flash */
+  uart_printf("\n========== CALIBRATION MODE ==========\r\n");
+  uart_printf("Running full calibration...\r\n");
   if (MPU9250_CalibrateAll(&hspi1) == HAL_OK) {
     uart_printf("All calibrations successful\r\n");
+    // Save calibration to flash
+    if (MPU9250_SaveCalibration() == HAL_OK) {
+      uart_printf("Calibration saved to flash!\r\n");
+    } else {
+      uart_printf("ERROR: Failed to save calibration to flash\r\n");
+    }
   } else {
     uart_printf("Calibration failed\r\n");
   }
+  uart_printf("========== CALIBRATION COMPLETE ==========\r\n\n");
+#else
+  /* Normal mode: load calibration from flash */
+  uart_printf("\n========== NORMAL MODE (CALIBRATED) ==========\r\n");
+  uart_printf("Loading calibration from flash...\r\n");
+  if (MPU9250_LoadCalibration() != HAL_OK) {
+    uart_printf("WARNING: No calibration found in flash. Please run calibration mode.\r\n");
+  }
+  uart_printf("========== READY ==========\r\n\n");
 #endif
 
   int32_t accel_data_x;
@@ -163,7 +182,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    Control_Step(&hspi1, &mpu_data, &last_read_time, &timer_accel_read, &timer_mpu_read, &timer_total,1500);
+    Control_Step(&hspi1, &mpu_data, &last_read_time, &timer_accel_read, &timer_mpu_read, &timer_total,10);
   }
   /* USER CODE END 3 */
 }

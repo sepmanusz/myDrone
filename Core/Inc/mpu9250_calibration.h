@@ -52,25 +52,8 @@ void MPU9250_ApplyCalibration(MPU9250_Data *data);
 /* Reset calibration to defaults */
 void MPU9250_CalibrationReset(void);
 
-/* Heading calculation functions */
-/**
- * @brief Compute 2D heading from magnetometer only (horizontal plane)
- * @param mag_x, mag_y: calibrated magnetometer readings (uT)
- * @param declination: magnetic declination in degrees (Budapest: -4.0°)
- * @return heading in degrees [0, 360)
- */
-float ComputeHeading2D(float mag_x, float mag_y, float declination);
-
-/**
- * @brief Compute tilt-compensated 3D heading
- * Uses accelerometer to get pitch/roll, then projects mag vector to horizontal plane
- * @param mag_x, mag_y, mag_z: calibrated magnetometer (uT)
- * @param accel_x, accel_y, accel_z: calibrated accelerometer (g)
- * @param declination: magnetic declination in degrees
- * @return heading in degrees [0, 360)
- */
-float ComputeHeading3D(float mag_x, float mag_y, float mag_z,
-                       float accel_x, float accel_y, float accel_z,
-                       float declination);
+/* Save/Load calibration from flash */
+HAL_StatusTypeDef MPU9250_SaveCalibration(void);
+HAL_StatusTypeDef MPU9250_LoadCalibration(void);
 
 #endif /* MPU9250_CALIBRATION_H */

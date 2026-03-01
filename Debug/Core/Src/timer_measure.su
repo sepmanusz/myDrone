@@ -1,0 +1,6 @@
+../Core/Src/timer_measure.c:15:6:Timer_Init	8	static
+../Core/Src/timer_measure.c:32:6:Timer_Start	16	static
+../Core/Src/timer_measure.c:41:6:Timer_Stop	16	static
+../Core/Src/timer_measure.c:62:7:Timer_GetElapsed_us	16	static
+../Core/Src/timer_measure.c:71:7:Timer_GetElapsed_ms	16	static
+../Core/Src/timer_measure.c:80:6:Timer_PrintElapsed	32	static

@@ -1,0 +1,9 @@
+../Core/Src/mpu9250_calibration.c:34:13:wait_for_user_button	3
+../Core/Src/mpu9250_calibration.c:51:19:MPU9250_CalibrateGyro	5
+../Core/Src/mpu9250_calibration.c:95:19:MPU9250_CalibrateAccel	6
+../Core/Src/mpu9250_calibration.c:159:19:MPU9250_CalibrateMag	11
+../Core/Src/mpu9250_calibration.c:225:19:MPU9250_CalibrateAll	4
+../Core/Src/mpu9250_calibration.c:253:6:MPU9250_ApplyCalibration	5
+../Core/Src/mpu9250_calibration.c:286:6:MPU9250_CalibrationReset	1
+../Core/Src/mpu9250_calibration.c:311:7:ComputeHeading2D	3
+../Core/Src/mpu9250_calibration.c:326:7:ComputeHeading3D	4

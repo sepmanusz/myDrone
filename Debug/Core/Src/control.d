@@ -34,7 +34,8 @@ Core/Src/control.o: ../Core/Src/control.c ../Core/Inc/control.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd_ex.h \
  ../Core/Inc/mpu9250.h ../Core/Inc/main.h \
  ../Core/Inc/mpu9250_calibration.h ../Core/Inc/timer_measure.h \
- ../Core/Inc/uart_printf.h ../Core/Inc/mpu9250_calibration.h
+ ../Core/Inc/uart_printf.h ../Core/Inc/mpu9250_calibration.h \
+ ../Core/Inc/imu_filter.h
 ../Core/Inc/control.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h:
 ../Core/Inc/stm32f7xx_hal_conf.h:
@@ -75,3 +76,4 @@ Core/Src/control.o: ../Core/Src/control.c ../Core/Inc/control.h \
 ../Core/Inc/timer_measure.h:
 ../Core/Inc/uart_printf.h:
 ../Core/Inc/mpu9250_calibration.h:
+../Core/Inc/imu_filter.h:

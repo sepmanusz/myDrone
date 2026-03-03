@@ -24,7 +24,7 @@ last_yaw = 0.0
 
 # regex pattern
 pattern = re.compile(
-    r'Pitch=(-?\d+)\.(\d+).*Roll=(-?\d+)\.(\d+).*Yaw=(-?\d+)\.(\d+)'
+    r'Pitch:(-?\d+)\.(\d+).*Roll:(-?\d+)\.(\d+).*Yaw:(-?\d+)\.(\d+)'
 )
 
 # thread function: continuously read serial data

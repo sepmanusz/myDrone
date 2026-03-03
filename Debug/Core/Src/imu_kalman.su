@@ -1,0 +1,2 @@
+../Core/Src/imu_kalman.c:3:6:KalmanFilter_Init	32	static
+../Core/Src/imu_kalman.c:18:7:KalmanFilter_Update	64	static

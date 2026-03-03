@@ -1,5 +1,7 @@
 "./Core/Src/control.o"
 "./Core/Src/drone_stabilization_example.o"
+"./Core/Src/imu_filter.o"
+"./Core/Src/imu_kalman.o"
 "./Core/Src/main.o"
 "./Core/Src/mpu9250.o"
 "./Core/Src/mpu9250_calibration.o"

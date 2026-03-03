@@ -95,7 +95,7 @@ void Error_Handler(void);
 #define CS_GPIO_Port GPIOB
 #define INT_EXTI_Pin GPIO_PIN_9
 #define INT_EXTI_GPIO_Port GPIOB
-//#define CALIBRATE_DRONE
+#define CALIBRATE_DRONE
 
 /* USER CODE BEGIN Private defines */
 

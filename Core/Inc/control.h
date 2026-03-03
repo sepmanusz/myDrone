@@ -11,7 +11,8 @@
 #include "mpu9250.h"
 #include "mpu9250_calibration.h"
 #include "timer_measure.h"
-#include "uart_printf.h"
+
+
 
 void Control_Step(SPI_HandleTypeDef *hspi, MPU9250_Data *mpu_data, uint32_t *last_read_time,
                   TimerMeasure_t *timer_accel_read, TimerMeasure_t *timer_mpu_read,

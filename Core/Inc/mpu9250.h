@@ -54,6 +54,14 @@
 #define MPU9250_CS_PORT GPIOB
 #define MPU9250_CS_PIN GPIO_PIN_8
 
+#define BODY_PITCH_OFFSET_RAD (6.5f * M_PI / 180.0f)
+
+/* Global yaw direction convention:
+ * +1.0f: positive yaw when rotating left (CCW looking from above)
+ * -1.0f: inverted yaw direction
+ */
+#define IMU_YAW_SIGN (1.0f)
+
 /* Típus definíciók */
 typedef struct {
     float accelX;
@@ -82,11 +90,9 @@ uint8_t MPU9250_ReadReg(SPI_HandleTypeDef *hspi, uint8_t reg);
 void MPU9250_WriteReg(SPI_HandleTypeDef *hspi, uint8_t reg, uint8_t value);
 HAL_StatusTypeDef MPU9250_Check(SPI_HandleTypeDef *hspi);
 HAL_StatusTypeDef MPU9250_MagInit(SPI_HandleTypeDef *hspi);
-HAL_StatusTypeDef MPU9250_ReadMag(SPI_HandleTypeDef *hspi, float *mx, float *my, float *mz);
 
-/* IMU angle calculation functions */
-void IMU_CalculateAngles(const MPU9250_Data *mpu_data, IMU_Angles_t *angles);
-void IMU_UpdateAnglesWithGyro(IMU_Angles_t *angles, const MPU9250_Data *mpu_data, float dt);
-void IMU_ComplementaryFilter(IMU_Angles_t *angles, const MPU9250_Data *mpu_data, float dt, float alpha);
+/* IMU angle calculation functions (accelerometer + magnetometer) */
+void IMU_AccelMagAngles(const MPU9250_Data *mpu_data, IMU_Angles_t *angles);
+/* complementary filter declaration moved to imu_filter.h */
 
 #endif /* MPU9250_H */

@@ -239,19 +239,19 @@ HAL_StatusTypeDef MPU9250_CalibrateAll(SPI_HandleTypeDef *hspi)
 {
     uart_printf("\n========== MPU9250 FULL CALIBRATION START ==========\r\n");
     
-    if (MPU9250_CalibrateGyro(hspi, 200) != HAL_OK) {
+    if (MPU9250_CalibrateGyro(hspi, 2000) != HAL_OK) {
         uart_printf("ERROR: Gyro calibration failed\r\n");
         return HAL_ERROR;
     }
     HAL_Delay(1000);
     
-    if (MPU9250_CalibrateAccel(hspi, 250) != HAL_OK) {
+    if (MPU9250_CalibrateAccel(hspi, 500) != HAL_OK) {
         uart_printf("ERROR: Accel calibration failed\r\n");
         return HAL_ERROR;
     }
     HAL_Delay(1000);
     
-    if (MPU9250_CalibrateMag(hspi, 6000) != HAL_OK) {  /* 60 second spherical rotation */
+    if (MPU9250_CalibrateMag(hspi, 90000) != HAL_OK) {  /* 90 second spherical rotation */
         uart_printf("ERROR: Mag calibration failed\r\n");
         return HAL_ERROR;
     }

@@ -3,7 +3,9 @@
 ## Mit csináltam?
 
 ### 1. **Szögszámítás modul hozzáadva** (`mpu9250.c` és `mpu9250.h`)
-   - `IMU_CalculateAngles()` - Gyorsulásból szögek
+   - `IMU_AccelMagAngles()` - Accelerometer+magnetometer alapú szögek
+   - `IMU_IntegrateGyro()`   - Giroszkópokból integrált szögek
+   - `KalmanFilter_…`         - Kalman‑szűrő (lásd IMU_KALMAN.md)
    - `IMU_UpdateAnglesWithGyro()` - Giroszkóp integráció  
    - `IMU_ComplementaryFilter()` - **Javasolt!** Kombinált szűrő
 

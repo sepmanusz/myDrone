@@ -10,7 +10,9 @@ Az új angle calculation modul 3 Euler-szöget számít ki az MPU9250 szenzorbó
 
 ## Architektúra
 
-### 1. **Accelerometer-alapú szögszámítás** (`IMU_CalculateAngles`)
+### 1. **Accelerometer + magnetometer szögszámítás** (`IMU_AccelMagAngles`)
+
+Ez a függvény csak az accel/mag szenzorok adataiból állítja össze a pitch/roll/yaw értékeket. A neve is tükrözi, hogy *nem* használ giroszkópot.
 Sztatikus helyzetből gyorsulásból számítja a szögeket:
 ```c
 Roll  = atan2(accelY, accelZ)
@@ -39,6 +41,13 @@ angle_new = angle_old + gyro_rate × Δt
 - Drift: idővel eltérül az igazi értéktől
 
 ### 3. **Komplementer szűrő** (`IMU_ComplementaryFilter`) ⭐ JAVASOLT
+
+> 💡 A prototípus és a `YAW_SIGN` konfiguráció az új `imu_filter.h` fájlban található; include-olni kell a forráskódodban.
+> 
+> A giroszkóp‑integrációt már külön függvény végzi (`IMU_IntegrateGyro`), ha csak erre van szükséged akkor azt is meghívhatod közvetlenül.
+
+
+Ez a szűrő mostantól a giroszkóp adatokat a jelenlegi roll/pitch alapján Euler-rátákká alakítja, így elkerüli a yaw érték elcsavarodását, amikor döntöd a gépet. A mag‑alapú heading iránya néhány (pl. 180° elfordításon átesett) szenzornál fordított lehet, ezért a kód automatikusan megfordítja azt a helyes szerinti orientációhoz. A magnetométeres korrekció súlya a `mag_weight` változóval simán csökken mindaddig, amíg a drón nem vízszintes; 45–60° felett gyakorlatilag eltűnik. Ez megakadályozza, hogy a yaw érték a roll/pitch közben „össze‑vissza” ugráljon.
 Kombinál gyroszkópot (gyors) és gyorsulásmérőt (pontos):
 ```c
 filtered_angle = α × (angle_old + gyro × Δt) + (1-α) × accel_angle
@@ -80,6 +89,12 @@ float yaw_error = desired_yaw - current_yaw;
 if (yaw_error > 180.0f) yaw_error -= 360.0f;
 if (yaw_error < -180.0f) yaw_error += 360.0f;
 ```
+
+## Kalman filter opción (kisérleti)
+
+Az új `imu_kalman` modul egy egyszerű 1D Kalman‑szűrőt valósít meg a
+gyroszkóp és a mérő szög (kompaszialapú) egyesítésére.  A `IMU_KALMAN.md`
+függelékben találod a részletes egyenleteket és magyarázatot.
 
 ## Control_Step funkcionalitás
 
@@ -144,7 +159,7 @@ Az yaw és heading pontosságához jó mágneses kalibráció kell:
 
 ### Függvények
 
-#### `void IMU_CalculateAngles(const MPU9250_Data *mpu_data, IMU_Angles_t *angles)`
+#### `void IMU_AccelMagAngles(const MPU9250_Data *mpu_data, IMU_Angles_t *angles)`
 Gyorsulásmérőből és mágneses mérőből számítja a szögeket.
 - **Használat**: Sztatikus helyzethez
 - **Pontosság**: Kiváló (hosszú ideig)
